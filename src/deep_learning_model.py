@@ -1,9 +1,11 @@
+import os, shutil
 import v4l2capture
 from ctypes import *
 import struct, array
 from fcntl import ioctl
 import cv2
 import numpy as np
+import time
 from sys import argv
 import getopt
 import sys, select, termios, tty
@@ -17,6 +19,7 @@ import functools
 from PIL import Image
 from PIL import ImageFile
 from PIL import ImageDraw
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class DLmodel():
 

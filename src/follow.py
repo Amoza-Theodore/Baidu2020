@@ -6,8 +6,9 @@
 
 import sys
 
-from .car import Car
-from .deep_learning_model import DLmodel
+from car import Car
+from deep_learning_model import DLmodel
+from status import Status
 from settings import Settings
 import functions as func
 
@@ -21,9 +22,12 @@ def follow():
     # 初始化深度学习模型
     dlmodel = DLmodel(ai_settings)
 
+    # 创建一个状态类, 用以储存状态
+    stats = Status()
+
     # 开始任务的主循环
     while True:
-        func.get_image(ai_settings, dlmodel)
+        func.get_image(ai_settings, car, dlmodel)
         func.get_center_coordinates(ai_settings, dlmodel, stats)
         func.update_vel_and_angle(ai_settings, car, stats)
 

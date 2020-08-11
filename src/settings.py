@@ -13,3 +13,6 @@ class Settings():
 
         # 标志物检测的设置选项
         self.score_thresold = 0.6
+        self.label_dict = {
+            0: 'landmark'
+        }

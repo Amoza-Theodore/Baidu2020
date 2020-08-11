@@ -1,2 +1,2 @@
 # BaiduAI
-The code of the 15th National College Students Intelligent Automobile Competition artificial intelligence Creative Competition attended by You Ying Team of Jiangsu University.
+这是江苏大学幽荧队的仓库，为参加第十五届全国大学生智能汽车大赛人工智能创意赛而设立。

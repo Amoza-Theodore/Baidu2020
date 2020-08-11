@@ -22,24 +22,32 @@ from PIL import ImageDraw
 
 import numpy as np
 
-def get_image(ai_settings, dlmodel):
+def get_image(ai_settings, car, dlmodel):
     """摄像头获取图像"""
     lower_hsv = np.array([25, 75, 190])
     upper_hsv = np.array([40, 255, 255])
 
+    select.select((car.video,), (), ())
+    image_data = car.video.read_and_queue()
+    frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
     label_img = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    dlmodel.img_label = Image.fromarray(label_img)
+
+    dlmodel.label_img = Image.fromarray(label_img)
 
 def get_center_coordinates(ai_settings, dlmodel, stats):
-    paddle_data_feeds = dlmodel.deal_tensor(dl.label_image)
+    paddle_data_feeds = dlmodel.deal_tensor(dlmodel.label_img)
     label_outputs = dlmodel.label_predictor.Run(paddle_data_feeds)
     label_outputs = np.array(label_outputs[0], copy=False)
-    stats.detect = check_detect(label_outputs)
+    stats.detect = check_detect(ai_settings, label_outputs)
     if stats.detect:
-        stats.labels, stats.scores, boxes = get_img_para(label_outputs)
-        stats.center_x, stats.center_y = analyse_box(boxes)
+        print("detect successfully!")
+        labels, scores, boxes = get_img_para(ai_settings, label_outputs)
+        stats.center_x, stats.center_y = analyse_box(ai_settings, labels, boxes)
+    else:
+        print("not detect, save image.")
+        save_img(ai_settings, dlmodel)
 
-def check_detect(label_outputs):
+def check_detect(ai_settings, label_outputs):
     """判断是否检测到标志物"""
     if len(label_outputs.shape) > 1:
         scores = label_outputs[:, 1]
@@ -49,7 +57,7 @@ def check_detect(label_outputs):
                 return True
     return False
 
-def get_img_para(label_outputs):
+def get_img_para(ai_settings, label_outputs):
     """处理 label_outputs, 得到 labels, scores, boxes"""
     mask = label_outputs[:, 1] > ai_settings.score_thresold
     labels = label_outputs[mask, 0].astype('int32')
@@ -58,14 +66,16 @@ def get_img_para(label_outputs):
 
     return labels, scores, boxes
 
-def analyse_box(boxes):
+def analyse_box(ai_settings, labels, boxes):
     """处理 boxes, 得到 center_x, center_y"""
-    xmin, ymin, xmax, ymax = box[0], box[1], box[2], box[3]
-    xmin, xmax = (int(x / 608 * 320) for x in [xmin, xmax])
-    ymin, ymax = (int(y / 608 * 240) for y in [ymin, ymax])
-    center_x = int((xmin + xmax) / 2)
-    center_y = int((ymin + ymax) / 2)
-    return center_x, center_y
+    for label_idx, box in zip(labels, boxes):
+        if ai_settings.label_dict[label_idx] == 'landmark':
+            xmin, ymin, xmax, ymax = box[0], box[1], box[2], box[3]
+            xmin, xmax = (int(x / 608 * 320) for x in [xmin, xmax])
+            ymin, ymax = (int(y / 608 * 240) for y in [ymin, ymax])
+            center_x = int((xmin + xmax) / 2)
+            center_y = int((ymin + ymax) / 2)
+            return center_x, center_y
 
 def update_vel_and_angle(ai_settings, car, stats):
     if stats.detect:
@@ -81,3 +91,9 @@ def update_vel_and_angle(ai_settings, car, stats):
         time.sleep(0.5)
         # 未检测到标志物, 小车停止运行
         car.stop()
+
+def save_img(ai_settings, dlmodel):
+    """保存图片"""
+    output_path = os.path.join(ai_settings.img_save_path, str(dlmodel.ImgInd) + '.jpg')
+    dlmodel.label_img.save(output_path)
+    dlmodel.ImgInd += 1

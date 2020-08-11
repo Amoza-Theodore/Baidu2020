@@ -5,7 +5,6 @@ class Settings():
         """初始化任务设置"""
 
         # 模型文件保存路径
-        self.angle_model_path = '../model/angle_model/model_infer'
         self.label_model_path = '../model/label_model/model_infer'
 
         # 小车的设置选项

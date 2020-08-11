@@ -4,8 +4,9 @@ class Settings():
     def __init__(self):
         """初始化任务设置"""
 
-        # 模型文件保存路径
+        # 文件保存路径
         self.label_model_path = '../model/label_model/model_infer'
+        self.img_save_path = '../predict_img'
 
         # 小车的设置选项
         self.car_init_speed = 1600

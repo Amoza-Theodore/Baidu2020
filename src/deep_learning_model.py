@@ -35,8 +35,9 @@ class DLmodel():
         pm_config.thread_num = 4
         self.label_predictor = pm.CreatePaddlePredictor(pm_config)
 
-        # 标志物图片
+        # 标志物相关变量
         self.label_img = None
+        self.ImgInd = 0
 
     def deal_tensor(self, origin):
         tensor_img = origin.resize((256, 256), Image.BILINEAR)

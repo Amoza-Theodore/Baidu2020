@@ -31,6 +31,7 @@ def get_image(ai_settings, car, dlmodel):
     image_data = car.video.read_and_queue()
     frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
     label_img = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
     dlmodel.label_img = Image.fromarray(label_img)
 
 def get_center_coordinates(ai_settings, dlmodel, stats):
@@ -43,7 +44,8 @@ def get_center_coordinates(ai_settings, dlmodel, stats):
         labels, scores, boxes = get_img_para(ai_settings, label_outputs)
         stats.center_x, stats.center_y = analyse_box(ai_settings, labels, boxes)
     else:
-        print("not detect.")
+        print("not detect, save image.")
+        save_img(ai_settings, dlmodel)
 
 def check_detect(ai_settings, label_outputs):
     """判断是否检测到标志物"""
@@ -89,3 +91,9 @@ def update_vel_and_angle(ai_settings, car, stats):
         time.sleep(0.5)
         # 未检测到标志物, 小车停止运行
         car.stop()
+
+def save_img(ai_settings, dlmodel):
+    """保存图片"""
+    output_path = os.path.join(ai_settings.img_save_path, str(dlmodel.ImgInd) + '.jpg')
+    dlmodel.label_img.save(output_path)
+    dlmodel.ImgInd += 1

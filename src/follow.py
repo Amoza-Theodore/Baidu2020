@@ -24,8 +24,8 @@ def follow():
     # 开始任务的主循环
     while True:
         func.get_image(ai_settings, dlmodel)
-        func.get_center_coordinates()
-        func.update_vel_and_angle()
+        func.get_center_coordinates(ai_settings, dlmodel, stats)
+        func.update_vel_and_angle(ai_settings, car, stats)
 
 if __name__ == '__main__':
     follow()

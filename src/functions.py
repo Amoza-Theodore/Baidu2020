@@ -30,7 +30,7 @@ def get_image(ai_settings, dlmodel):
     label_img = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     dlmodel.img_label = Image.fromarray(label_img)
 
-def get_center_coordinates():
+def get_center_coordinates(ai_settings, dlmodel, stats):
     paddle_data_feeds = dlmodel.deal_tensor(dl.label_image)
     label_outputs = dlmodel.label_predictor.Run(paddle_data_feeds)
     label_outputs = np.array(label_outputs[0], copy=False)
@@ -39,7 +39,7 @@ def get_center_coordinates():
         stats.labels, stats.scores, boxes = get_img_para(label_outputs)
         stats.center_x, stats.center_y = analyse_box(boxes)
 
-def check_detect():
+def check_detect(label_outputs):
     """判断是否检测到标志物"""
     if len(label_outputs.shape) > 1:
         scores = label_outputs[:, 1]
@@ -50,6 +50,7 @@ def check_detect():
     return False
 
 def get_img_para(label_outputs):
+    """处理 label_outputs, 得到 labels, scores, boxes"""
     mask = label_outputs[:, 1] > ai_settings.score_thresold
     labels = label_outputs[mask, 0].astype('int32')
     scores = label_outputs[mask, 1].astype('float32')
@@ -58,4 +59,25 @@ def get_img_para(label_outputs):
     return labels, scores, boxes
 
 def analyse_box(boxes):
-    pass
+    """处理 boxes, 得到 center_x, center_y"""
+    xmin, ymin, xmax, ymax = box[0], box[1], box[2], box[3]
+    xmin, xmax = (int(x / 608 * 320) for x in [xmin, xmax])
+    ymin, ymax = (int(y / 608 * 240) for y in [ymin, ymax])
+    center_x = int((xmin + xmax) / 2)
+    center_y = int((ymin + ymax) / 2)
+    return center_x, center_y
+
+def update_vel_and_angle(ai_settings, car, stats):
+    if stats.detect:
+        # 计算角度值并更新 [0, 320] -> [900, 2100]
+        angle = 900 + int(stats.center_x / 320 * 1200)
+        car.angle = angle
+        car.update()
+
+        # 计算速度值并更新 [0, 240] -> [1500, 1600]
+        # speed = 1500 + int(stats.center_y / 240)
+        pass
+    else:
+        time.sleep(0.5)
+        # 未检测到标志物, 小车停止运行
+        car.stop()

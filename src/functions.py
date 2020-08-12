@@ -34,18 +34,18 @@ def get_image(ai_settings, car, dlmodel):
 
     dlmodel.label_img = Image.fromarray(label_img)
 
-def get_center_coordinates(ai_settings, dlmodel, stats):
+def get_center_coordinates(ai_settings, dlmodel, markstats):
+    """得到中点坐标"""
     paddle_data_feeds = dlmodel.deal_tensor(dlmodel.label_img)
     label_outputs = dlmodel.label_predictor.Run(paddle_data_feeds)
     label_outputs = np.array(label_outputs[0], copy=False)
-    stats.detect = check_detect(ai_settings, label_outputs)
-    if stats.detect:
-        print("detect successfully!")
-        labels, scores, boxes = get_img_para(ai_settings, label_outputs)
-        stats.center_x, stats.center_y = analyse_box(ai_settings, labels, boxes)
+    markstats.detect = check_detect(ai_settings, label_outputs)
+    if markstats.detect:
+        labels, scores, markstats.bbox = get_img_para(ai_settings, label_outputs)
+        markstats.center_x, markstats.center_y = analyse_box(ai_settings, labels, markstats.bbox)
     else:
-        print("not detect, save image.")
-        save_img(ai_settings, dlmodel)
+        pass
+        # save_img(ai_settings, dlmodel)
 
 def check_detect(ai_settings, label_outputs):
     """判断是否检测到标志物"""
@@ -77,23 +77,40 @@ def analyse_box(ai_settings, labels, boxes):
             center_y = int((ymin + ymax) / 2)
             return center_x, center_y
 
-def update_vel_and_angle(ai_settings, car, stats):
-    if stats.detect:
-        # 计算角度值并更新 [0, 320] -> [900, 2100]
-        angle = 900 + int(stats.center_x / 320 * 1200)
-        car.angle = angle
+def update_vel_and_angle(ai_settings, car, dlmodel, markstats):
+    if markstats.detect:
+        car.stop_sign = False
+        # 计算角度值并更新 [0, 320] -> [500, 2500]
+        car.angle = int(1500 + (160 - markstats.center_x) / 320 * 2000)
+        print('car_angle = ' + str(car.angle))
+        car.speed = 1600
         car.update()
 
         # 计算速度值并更新 [0, 240] -> [1500, 1600]
         # speed = 1500 + int(stats.center_y / 240)
         pass
     else:
-        time.sleep(0.5)
+        if not car.stop_sign:
+            remain_search(ai_settings)
         # 未检测到标志物, 小车停止运行
         car.stop()
+
+def remain_search(ai_settings, car):
+    """小车在丢失标志物时尝试自动转向搜索"""
+    mask = np.array(car.angle_value) < 1500
+    car.angle = 500 if sum(mask) > len(mask) / 2 else 2500
+    car.update()
+    time.sleep(ai_settings.search_time)
 
 def save_img(ai_settings, dlmodel):
     """保存图片"""
     output_path = os.path.join(ai_settings.img_save_path, str(dlmodel.ImgInd) + '.jpg')
     dlmodel.label_img.save(output_path)
     dlmodel.ImgInd += 1
+
+def clean_img(ai_settings):
+    """清空 predict_img 文件夹"""
+    img_save_path = ai_settings.img_save_path
+    if os.path.exists(img_save_path):
+        shutil.rmtree(img_save_path)
+        os.makedirs(img_save_path)

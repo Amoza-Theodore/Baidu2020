@@ -14,6 +14,7 @@ class Settings():
 
         # 标志物检测的设置选项
         self.score_thresold = 0.6
+        self.search_time = 2 # 小车在丢失标志物后尝试自动转向搜索的时间
         self.label_dict = {
             0: 'landmark'
         }

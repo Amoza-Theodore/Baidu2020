@@ -8,8 +8,9 @@ import sys
 
 from car import Car
 from deep_learning_model import DLmodel
-from status import Status
+from markstatus import MarkStatus
 from settings import Settings
+import pid as PID
 import functions as func
 
 def follow():
@@ -23,13 +24,13 @@ def follow():
     dlmodel = DLmodel(ai_settings)
 
     # 创建一个状态类, 用以储存状态
-    stats = Status()
+    markstats = MarkStatus()
 
     # 开始任务的主循环
     while True:
         func.get_image(ai_settings, car, dlmodel)
-        func.get_center_coordinates(ai_settings, dlmodel, stats)
-        func.update_vel_and_angle(ai_settings, car, stats)
+        func.get_center_coordinates(ai_settings, dlmodel, markstats)
+        func.update_vel_and_angle(ai_settings, car, dlmodel, markstats)
 
 if __name__ == '__main__':
     follow()

@@ -35,7 +35,7 @@ class Car():
         video.start()
         self.video = video
 
-        # 初始化底层 arduino
+        # 初始化底层arduino
         path = os.path.split(os.path.realpath(__file__))[0] + "/.."
         lib_path = path + "/lib" + "/libart_driver.so"
         so = cdll.LoadLibrary
@@ -46,6 +46,10 @@ class Car():
         # 初始化速度值和角度值
         self.speed = ai_settings.car_init_speed
         self.angle = ai_settings.car_init_angle
+        self.angle_value = []
+
+        # 停止标志
+        self.stop_sign = True
 
     def go_straight(self):
         self.angle = 1500
@@ -53,8 +57,13 @@ class Car():
 
     def stop(self):
         self.speed = 1500
+        self.angle = 1500
+        self.stop_sign = True
         self.update()
 
     def update(self):
-        # self.lib.send_cmd(self.speed, self.angle)
-        pass
+        self.lib.send_cmd(self.speed, self.angle)
+
+        # 记录3个角度值
+        self.angle_value.append(self.angle)
+        if len(self.angle_value) > 3: self.angle_value.pop(0)

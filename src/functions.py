@@ -43,9 +43,13 @@ def get_center_coordinates(ai_settings, dlmodel, markstats):
     if markstats.detect:
         labels, scores, markstats.bbox = get_img_para(ai_settings, label_outputs)
         markstats.center_x, markstats.center_y = analyse_box(ai_settings, labels, markstats.bbox)
-    else:
-        pass
+        markstats.center_x_value.append(markstats.center_x)
+        if len(markstats.center_x_value) > 1:
+            markstats.center_x_value.pop(0)
+        print('center_x = ' + str(markstats.center_x))
+    elif not markstats.detect:
         # save_img(ai_settings, dlmodel)
+        pass
 
 def check_detect(ai_settings, label_outputs):
     """判断是否检测到标志物"""
@@ -77,30 +81,45 @@ def analyse_box(ai_settings, labels, boxes):
             center_y = int((ymin + ymax) / 2)
             return center_x, center_y
 
-def update_vel_and_angle(ai_settings, car, dlmodel, markstats):
+def update_follow_para(ai_settings, car, dlmodel, markstats):
+    """计算并更新跟随项目速度和角度值"""
     if markstats.detect:
-        car.stop_sign = False
-        # 计算角度值并更新 [0, 320] -> [500, 2500]
-        car.angle = int(1500 + (160 - markstats.center_x) / 320 * 2000)
-        print('car_angle = ' + str(car.angle))
-        car.speed = 1600
+        # 计算角度值并更新 [0, 320] -> [700, 2300]
+        car.angle = int(1500 + (160 - markstats.center_x) / 320 * 1600)
+        # 计算速度值并更新 [0, 240] -> [1500, 1700]
+        car.speed = int(1500 + (240 - markstats.center_y) / 240 * 200)
+
+        print('speed = %d, angle = %d' % (car.speed, car.angle))
         car.update()
 
-        # 计算速度值并更新 [0, 240] -> [1500, 1600]
-        # speed = 1500 + int(stats.center_y / 240)
-        pass
+        markstats.lose_mark_flag = True
     else:
-        if not car.stop_sign:
-            remain_search(ai_settings)
-        # 未检测到标志物, 小车停止运行
-        car.stop()
+        # 丢失标志物时, 记录当前时间
+        if markstats.lose_mark_flag:
+            markstats.lose_mark_flag = False
+            markstats.stdtime = time.time()
+        if time.time() - markstats.stdtime < 0.5 and len(markstats.center_x_value):
+            # print("remain search")
+            remain_search(ai_settings, car, markstats)
+        else:
+            # print("time limit, stop")
+            # 未检测到标志物, 小车停止运行
+            car.stop()
 
-def remain_search(ai_settings, car):
+def remain_search(ai_settings, car, markstats):
     """小车在丢失标志物时尝试自动转向搜索"""
-    mask = np.array(car.angle_value) < 1500
-    car.angle = 500 if sum(mask) > len(mask) / 2 else 2500
+    cnt = np.array([0, 0, 0])
+    for center_x in markstats.center_x_value:
+        if center_x < 120: cnt[0] += 1
+        elif center_x > 200: cnt[1] += 1
+        else: cnt[2] += 1
+    if np.argmax(cnt) == 0: car.angle = 2000
+    if np.argmax(cnt) == 1: car.angle = 1000
+    if np.argmax(cnt) == 2:
+        car.angle = 1500
+        car.speed = 1500
+    # print('searching, car_angle = ' + str(car.angle))
     car.update()
-    time.sleep(ai_settings.search_time)
 
 def save_img(ai_settings, dlmodel):
     """保存图片"""
@@ -113,4 +132,5 @@ def clean_img(ai_settings):
     img_save_path = ai_settings.img_save_path
     if os.path.exists(img_save_path):
         shutil.rmtree(img_save_path)
+    if not os.path.exists(img_save_path):
         os.makedirs(img_save_path)

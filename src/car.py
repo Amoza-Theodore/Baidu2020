@@ -48,17 +48,16 @@ class Car():
         self.angle = ai_settings.car_init_angle
         self.angle_value = []
 
-        # 停止标志
-        self.stop_sign = True
+        # 运行标志
+        self.start_sign = False
 
     def go_straight(self):
         self.angle = 1500
         self.update()
 
     def stop(self):
-        self.speed = 1500
-        self.angle = 1500
-        self.stop_sign = True
+        self.speed = self.angle = 1500
+        self.start_sign = False
         self.update()
 
     def update(self):
@@ -66,4 +65,4 @@ class Car():
 
         # 记录3个角度值
         self.angle_value.append(self.angle)
-        if len(self.angle_value) > 3: self.angle_value.pop(0)
+        if len(self.angle_value) > 1: self.angle_value.pop(0)

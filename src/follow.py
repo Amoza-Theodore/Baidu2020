@@ -8,7 +8,7 @@ import sys
 
 from car import Car
 from deep_learning_model import DLmodel
-from markstatus import MarkStatus
+from mark_status import MarkStatus
 from settings import Settings
 import pid as PID
 import functions as func
@@ -16,6 +16,7 @@ import functions as func
 def follow():
     # 初始化设置选项
     ai_settings = Settings()
+    func.clean_img(ai_settings)
 
     # 初始化小车
     car = Car(ai_settings)
@@ -30,7 +31,7 @@ def follow():
     while True:
         func.get_image(ai_settings, car, dlmodel)
         func.get_center_coordinates(ai_settings, dlmodel, markstats)
-        func.update_vel_and_angle(ai_settings, car, dlmodel, markstats)
+        func.update_follow_para(ai_settings, car, dlmodel, markstats)
 
 if __name__ == '__main__':
     follow()

@@ -18,3 +18,5 @@ class Settings():
         self.label_dict = {
             0: 'landmark'
         }
+
+        # 手柄信息

@@ -153,6 +153,8 @@ def algorithmal_control(ai_settings, car, dlmodel, markstats, algocontrol):
         return
     if algocontrol.limit_flag == True:
         angle = ai_settings.angle_limit_formula(algocontrol.angle_prep)
+        car.update(angle=angle)
+        return
 
 def save_img(ai_settings, dlmodel):
     """保存图片"""

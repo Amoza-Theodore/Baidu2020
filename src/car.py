@@ -1,3 +1,4 @@
+import os
 import v4l2capture
 from ctypes import *
 import tty
@@ -66,6 +67,8 @@ class Car():
         self.start_sign = False
         self.update()
 
-    def update(self, speed=self.speed, angle=self.angle):
+    def update(self, speed=None, angle=None):
+        if speed is None: speed = self.speed
+        if angle is None: angle = self.angle
         """更新小车的速度值和角度值"""
         self.lib.send_cmd(speed, angle)

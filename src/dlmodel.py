@@ -33,7 +33,7 @@ class DLmodel():
             Place(TargetType.kARM, PrecisionType.kFloat),
         );
         config = CxxConfig();
-        model_dir = self.angle_model_path;
+        model_dir = ai_settings.angle_model_path;
         config.set_model_file(model_dir + "/model");
         config.set_param_file(model_dir + "/params");
         config.set_valid_places(valid_places);
@@ -69,4 +69,5 @@ class DLmodel():
         tensor.dtype = pm.PaddleDType.FLOAT32
         tensor.shape = (1, 3, 256, 256)
         tensor.data = pm.PaddleBuf(tensor_img)
-        self.paddle_data_feeds = [tensor]
+        paddle_data_feeds = [tensor]
+        return paddle_data_feeds

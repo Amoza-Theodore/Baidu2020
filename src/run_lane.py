@@ -24,7 +24,7 @@ def run_line():
     # 开始任务的主循环
     while True:
         func.get_image(ai_settings, car, dlmodel)
-        angle_prep = func.predict_angle()
+        angle_prep = func.predict_angle(ai_settings, dlmodel)
         angle = ai_settings.angle_formula(angle_prep)
         car.update(angle=angle)
 

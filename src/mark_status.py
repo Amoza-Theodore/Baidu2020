@@ -6,6 +6,7 @@ class MarkStatus():
         self.detect = False
         self.labels = None
         self.scores = None
+        self.boxes = None
 
         # 如影随形的相关内容
         self.follow_center_x = None

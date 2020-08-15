@@ -31,18 +31,19 @@ def get_image(ai_settings, car, dlmodel):
 
 def get_follow_para(ai_settings, dlmodel, markstats):
     get_label_para(ai_settings, dlmodel, markstats)
-    for label_idx, box in zip(markstats.labels, markstats.boxes):
-        if ai_settings.follow_dict[label_idx] == 'landmark':
-            markstats.follow_center_x, markstats.follow_center_y = analyse_box(ai_settings, markstats.bbox)
+    if markstats.detect:
+        for label_idx, box in zip(markstats.labels, markstats.boxes):
+            if ai_settings.follow_dict[label_idx] == 'landmark':
+                markstats.follow_center_x, markstats.follow_center_y = analyse_box(ai_settings, markstats.bbox)
 
 def get_label_para(ai_settings, dlmodel, markstats):
-    paddle_data_feeds = dlmodel.deal_tensor(dlmodel.label_img)
+    paddle_data_feeds = dlmodel.deal_tensor()
     label_outputs = dlmodel.label_predictor.Run(paddle_data_feeds)
     label_outputs = np.array(label_outputs[0], copy=False)
     markstats.detect = check_detect(ai_settings, label_outputs)
     # 如果检测到标志物
     if markstats.detect:
-        markstats.labels, markstats.scores, markstats.bbox = get_img_para(ai_settings, label_outputs)
+        markstats.labels, markstats.scores, markstats.boxes = get_img_para(ai_settings, label_outputs)
     # 如果未检测到标志物
     elif not markstats.detect:
         # save_img(ai_settings, dlmodel)
@@ -93,7 +94,7 @@ def update_follow_para(ai_settings, car, dlmodel, markstats):
         if markstats.lose_mark_flag:
             markstats.lose_mark_flag = False
             markstats.stdtime = time.time()
-        if time.time() - markstats.stdtime < 0.5 and len(markstats.center_x_value):
+        if time.time() - markstats.stdtime < 0.5 and markstats.last_follow_center_x:
             remain_search(ai_settings, car, markstats)
         else:
             # 未检测到标志物, 小车停止运行
@@ -155,6 +156,8 @@ def algorithmal_control(ai_settings, car, dlmodel, markstats, algocontrol):
         angle = ai_settings.angle_limit_formula(algocontrol.angle_prep)
         car.update(angle=angle)
         return
+
+    car.update()
 
 def save_img(ai_settings, dlmodel):
     """保存图片"""

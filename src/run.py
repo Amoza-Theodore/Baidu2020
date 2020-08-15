@@ -33,7 +33,10 @@ def run():
     # 开始任务的主循环
     while True:
         func.get_image(ai_settings, car, dlmodel)
-        algocontrol.angle_prep = func.predict_angle()
-        angle = ai_settings.angle_formula(angle_prep)
+        algocontrol.angle_prep = func.predict_angle(ai_settings, dlmodel)
+        car.angle = ai_settings.angle_formula(algocontrol.angle_prep)
         func.get_label_para(ai_settings, dlmodel, markstats)
-        func.algorithmal_control(ai_settings, car, dlmodel, algocontrol)
+        func.algorithmal_control(ai_settings, car, dlmodel, markstats, algocontrol)
+
+if __name__ == '__main__':
+    run()

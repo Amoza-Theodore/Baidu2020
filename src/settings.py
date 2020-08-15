@@ -1,3 +1,5 @@
+import numpy as np
+
 class Settings():
     """储存所有跟随任务的设置"""
 
@@ -5,8 +7,9 @@ class Settings():
         """初始化任务设置"""
 
         # 文件保存路径
+        self.angle_model_path = '../model/angle_model/model_infer'
         self.follow_model_path = '../model/follow_model/model_infer'
-        self.label_mdoel_path = '../model/label_model/model_infer'
+        self.label_model_path = '../model/label_model/model_infer'
         self.img_save_path = '../predict_img'
 
         # 小车的设置选项

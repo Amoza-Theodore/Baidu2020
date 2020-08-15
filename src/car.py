@@ -1,24 +1,9 @@
-import os, shutil
 import v4l2capture
 from ctypes import *
-import struct, array
-from fcntl import ioctl
-import cv2
-import numpy as np
-import time
-from sys import argv
-import getopt
-import sys, select, termios, tty
-import threading
-import paddlemobile as pm
+import tty
 from paddlelite import *
-import codecs
-import multiprocessing
-import math
-import functools
 from PIL import Image
 from PIL import ImageFile
-from PIL import ImageDraw
 
 class Car():
 
@@ -51,18 +36,36 @@ class Car():
         # 运行标志
         self.start_sign = False
 
-    def go_straight(self):
+    def upwards(self, speed=1600):
+        """小车直行"""
+        self.speed = speed
         self.angle = 1500
         self.update()
 
+    def backwards(self, speed=1400):
+        """小车后退"""
+        if speed >= 1450: raise Exception("后退速度值必须小于1450!")
+        self.speed = speed
+        self.angle = 1500
+        self.update()
+
+    def turn_left(self, angle=2100):
+        """小车"""
+        if angle <= 1500: raise Exception("左转角度值必须大于1500!")
+        self.angle = angle
+        self.update()
+
+    def turn_right(self, angle=900):
+        if angle >= 1500: raise Exception("右转角度值必须小于1500!")
+        self.angle = angle
+        self.update()
+
     def stop(self):
+        """小车停止运行"""
         self.speed = self.angle = 1500
         self.start_sign = False
         self.update()
 
-    def update(self):
-        self.lib.send_cmd(self.speed, self.angle)
-
-        # 记录3个角度值
-        self.angle_value.append(self.angle)
-        if len(self.angle_value) > 1: self.angle_value.pop(0)
+    def update(self, speed=self.speed, angle=self.angle):
+        """更新小车的速度值和角度值"""
+        self.lib.send_cmd(speed, angle)

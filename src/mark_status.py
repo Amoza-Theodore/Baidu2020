@@ -6,8 +6,10 @@ class MarkStatus():
         self.detect = False
         self.labels = None
         self.scores = None
-        self.center_x = None
-        self.center_x_value = []
-        self.center_y = None
+
+        # 如影随形的相关内容
+        self.follow_center_x = None
+        self.last_follow_center_x = None
+        self.follow_center_y = None
         self.lose_mark_flag = True
         self.stdtime = time.time()

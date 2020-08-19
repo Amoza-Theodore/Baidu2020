@@ -5,6 +5,8 @@
     3. 调用标志物模型进行预测, 得出当前图片有关标志物的信息
     4. 对不同标志物分别进行算法层面的控制
 """
+import sys
+sys.path.append('../class')
 
 from car import Car
 from dlmodel import DLmodel

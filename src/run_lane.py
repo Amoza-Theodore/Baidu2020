@@ -4,6 +4,8 @@
     2. 调用模型进行预测, 得出当前图片所应输出的角度值
     3. 根据角度放大公式进行放大处理, 并更新小车的角度值
 """
+import sys
+sys.path.append('../class')
 
 from car import Car
 from dlmodel import DLmodel

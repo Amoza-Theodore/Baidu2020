@@ -17,6 +17,9 @@ from sys import argv
 import multiprocessing
 import time
 import getopt
+import sys
+
+sys.path.append('../class')
 
 from settings import Settings
 import functions as func

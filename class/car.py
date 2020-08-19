@@ -71,4 +71,4 @@ class Car():
         if speed is None: speed = self.speed
         if angle is None: angle = self.angle
         """更新小车的速度值和角度值"""
-        self.lib.send_cmd(speed, angle)
+        # self.lib.send_cmd(speed, angle)

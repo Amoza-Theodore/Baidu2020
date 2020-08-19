@@ -1,9 +1,11 @@
 '''
     如影随形的主程序
     1. 摄像头采集图像
-    2. 调用模型进行预测, 得出标志物的中点坐标
-    3. 根据中点坐标判断, 更新速度值和角度值
+    2. 调用模型进行预测, 得出标志物的边界坐标
+    3. 根据面积值和中点坐标判断, 更新速度值和角度值
 '''
+import sys
+sys.path.append('../class')
 
 from car import Car
 from dlmodel import DLmodel

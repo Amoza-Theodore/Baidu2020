@@ -9,6 +9,7 @@ class MarkStatus():
         self.boxes = None
 
         # 如影随形的相关内容
+        self.follow_area = None
         self.follow_center_x = None
         self.last_follow_center_x = None
         self.follow_center_y = None

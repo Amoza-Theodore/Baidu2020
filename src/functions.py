@@ -1,3 +1,5 @@
+
+
 import os, shutil
 from ctypes import *
 import cv2
@@ -6,6 +8,8 @@ import time
 import select
 from paddlelite import *
 from PIL import Image
+import sys
+sys.path.append('../class')
 
 def get_image(ai_settings, car, dlmodel):
     """摄像头获取图像"""
@@ -34,7 +38,7 @@ def get_follow_para(ai_settings, dlmodel, markstats):
     if markstats.detect:
         for label_idx, box in zip(markstats.labels, markstats.boxes):
             if ai_settings.follow_dict[label_idx] == 'landmark':
-                markstats.follow_center_x, markstats.follow_center_y = analyse_box(ai_settings, markstats.bbox)
+                markstats.follow_center_x, markstats.follow_center_y, markstats.follow_area = analyse_box(ai_settings, markstats.bbox)
 
 def get_label_para(ai_settings, dlmodel, markstats):
     paddle_data_feeds = dlmodel.deal_tensor()
@@ -56,7 +60,8 @@ def analyse_box(ai_settings, box):
     ymin, ymax = (int(y / 608 * 240) for y in [ymin, ymax])
     center_x = int((xmin + xmax) / 2)
     center_y = int((ymin + ymax) / 2)
-    return center_x, center_y
+    area = (ymax - ymin) * (xmax - xmin)
+    return center_x, center_y, area
 
 def check_detect(ai_settings, label_outputs):
     """判断是否检测到标志物"""
@@ -84,8 +89,9 @@ def update_follow_para(ai_settings, car, dlmodel, markstats):
         thre_left = ai_settings.angle_thre_left
         thre_right = ai_settings.angle_thre_right
         angle = int(1500 + (160 - markstats.follow_center_x) / 320 * (thre_right - thre_left))
-        # 计算速度值并更新 [0, 240] -> [1500, 1700]
-        speed = int(1500 + (240 - markstats.follow_center_y) / 240 * 200)
+        # 计算速度值并更新 [0, 320*240] -> [1500, 1700]
+        speed = int(1500 + (240 - markstats.follow_area) / 240 * 200)
+        print(f'area:{markstats.follow_area}, speed:{speed}')
 
         car.update(speed=speed, angle=angle)
         markstats.lose_mark_flag = True

@@ -93,15 +93,24 @@ def classify(data_path, img_path):
 def rename(path, begin_id=0):
     print('Renaming has started!')
 
-    filename = os.listdir(path)
+    # Organize file names.
+    filenames = os.listdir(path)
     id_list = []
-    for i in range(len(filename)):
-        id_list.append(int(filename[i][:-4]))
+    for i, filename in enumerate(filenames):
+        idx_num = filename.find('.')
+        id_list.append(int(filename[:idx_num]))
     id_list = sorted(id_list)
 
+    # If begin_id is less than max(id_list) then we take an intermediate quantity and do a rename operation first.
+    if begin_id in id_list:
+        # print("It's a normal tip: begin_id is too large, do an intermediate quantity operation first.")
+        id_list_copy = id_list.copy()
+        for i, id in enumerate(id_list_copy):
+            os.rename(os.path.join(path, str(id)+'.jpg'), os.path.join(path, str(id+max(id_list_copy)+10)+'.jpg'))
+            id_list[i] += max(id_list_copy)+10
+
     for i, id in enumerate(id_list):
-        if i % interval == 0:
-            os.rename(os.path.join(path, str(id)+'.jpg'), os.path.join(path, str(i+begin_id)+'.jpg'))
+        os.rename(os.path.join(path, str(id)+'.jpg'), os.path.join(path, str(i+begin_id)+'.jpg'))
 
     print('Renaming has been completed!')
 
@@ -117,6 +126,6 @@ def txt_2_numpy(data_path='./data.txt', npy_path='./data.npy'):
     file.close()
 
 if __name__ == '__main__':
-    # rename(path='./plan10/img_TurnLeft', begin_id=978)
-    trainlist_deal(data_path='./plan12/data.txt', score_path='./plan12/score.txt', csv_path='./plan12/data_order.csv')
-    # txt_2_numpy(data_path='./plan10/data.txt',npy_path='./plan10/data.npy')
+    # rename(path='./data_origin/img - Copy', begin_id=1308)
+    trainlist_deal(data_path='../work/data_origin/data.txt', score_path='../work/data_origin/score.txt', csv_path='../work/data_origin/data_order.csv')
+    # txt_2_numpy(data_path='./data_origin/data.txt',npy_path='./data_origin/data.npy')

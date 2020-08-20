@@ -126,6 +126,8 @@ def txt_2_numpy(data_path='./data.txt', npy_path='./data.npy'):
     file.close()
 
 if __name__ == '__main__':
-    # rename(path='./data_origin/img - Copy', begin_id=1308)
-    trainlist_deal(data_path='../work/data_origin/data.txt', score_path='../work/data_origin/score.txt', csv_path='../work/data_origin/data_order.csv')
-    # txt_2_numpy(data_path='./data_origin/data.txt',npy_path='./data_origin/data.npy')
+    work_path = '../work/车道线/'
+
+    # rename(path='../work/车道线/img', begin_id=0)
+    # txt_2_numpy(data_path='../work/车道线/data.txt',npy_path='../work/车道线/data.npy')
+    trainlist_deal(data_path=work_path+'data.txt', score_path=work_path+'score.txt',csv_path=work_path+'data_order.csv')

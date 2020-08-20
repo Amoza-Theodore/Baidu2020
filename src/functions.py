@@ -1,5 +1,3 @@
-
-
 import os, shutil
 from ctypes import *
 import cv2
@@ -34,13 +32,19 @@ def get_image(ai_settings, car, dlmodel):
     dlmodel.angle_img = np.expand_dims(angle_img, axis=0)
 
 def get_follow_para(ai_settings, dlmodel, markstats):
+    """得到如影随形中标志物相关的信息"""
     get_label_para(ai_settings, dlmodel, markstats)
     if markstats.detect:
+        # save_img(ai_settings, dlmodel)
+        print('score = {}'.format(markstats.scores))
         for label_idx, box in zip(markstats.labels, markstats.boxes):
             if ai_settings.follow_dict[label_idx] == 'landmark':
-                markstats.follow_center_x, markstats.follow_center_y, markstats.follow_area = analyse_box(ai_settings, markstats.bbox)
+                markstats.last_follow_center_x = markstats.follow_center_x
+                markstats.follow_center_x, markstats.follow_center_y = \
+                    analyse_box(ai_settings, box)
 
 def get_label_para(ai_settings, dlmodel, markstats):
+    """得到标志物检测相关的信息"""
     paddle_data_feeds = dlmodel.deal_tensor()
     label_outputs = dlmodel.label_predictor.Run(paddle_data_feeds)
     label_outputs = np.array(label_outputs[0], copy=False)
@@ -48,9 +52,9 @@ def get_label_para(ai_settings, dlmodel, markstats):
     # 如果检测到标志物
     if markstats.detect:
         markstats.labels, markstats.scores, markstats.boxes = get_img_para(ai_settings, label_outputs)
+
     # 如果未检测到标志物
     elif not markstats.detect:
-        # save_img(ai_settings, dlmodel)
         pass
 
 def analyse_box(ai_settings, box):
@@ -60,8 +64,7 @@ def analyse_box(ai_settings, box):
     ymin, ymax = (int(y / 608 * 240) for y in [ymin, ymax])
     center_x = int((xmin + xmax) / 2)
     center_y = int((ymin + ymax) / 2)
-    area = (ymax - ymin) * (xmax - xmin)
-    return center_x, center_y, area
+    return center_x, center_y
 
 def check_detect(ai_settings, label_outputs):
     """判断是否检测到标志物"""
@@ -86,12 +89,13 @@ def update_follow_para(ai_settings, car, dlmodel, markstats):
     """计算并更新跟随项目速度和角度值"""
     if markstats.detect:
         # 计算角度值并更新 [0, 320] -> [thre_left, thre_right]
+        save_img(ai_settings, dlmodel)
+        print('score = {}'.format(markstats.scores))
         thre_left = ai_settings.angle_thre_left
         thre_right = ai_settings.angle_thre_right
         angle = int(1500 + (160 - markstats.follow_center_x) / 320 * (thre_right - thre_left))
         # 计算速度值并更新 [0, 320*240] -> [1500, 1700]
-        speed = int(1500 + (240 - markstats.follow_area) / 240 * 200)
-        print(f'area:{markstats.follow_area}, speed:{speed}')
+        speed = int(1500 + (240 - markstats.follow_center_y) / 240 * 200)
 
         car.update(speed=speed, angle=angle)
         markstats.lose_mark_flag = True
@@ -100,7 +104,8 @@ def update_follow_para(ai_settings, car, dlmodel, markstats):
         if markstats.lose_mark_flag:
             markstats.lose_mark_flag = False
             markstats.stdtime = time.time()
-        if time.time() - markstats.stdtime < 0.5 and markstats.last_follow_center_x:
+        if time.time() - markstats.stdtime < 0.5 and markstats.last_follow_center_x \
+                and ai_settings.remain_search_flag:
             remain_search(ai_settings, car, markstats)
         else:
             # 未检测到标志物, 小车停止运行
@@ -140,30 +145,52 @@ def predict_angle(ai_settings, dlmodel):
     score = out.data()[0][0];
     return score
 
-def algorithmal_control(ai_settings, car, dlmodel, markstats, algocontrol):
+def algorithmal_control(ai_settings, car, markstats, algo):
     """对不同标志物分别进行算法层面的控制"""
-    # 识别标志模块
-    if markstats.detect:
-        for label_id, box in zip(markstats.labels, markstats.boxes):
-            center_x, center_y = analyse_box(ai_settings, box)
-            label = ai_settings.label_dict[label_id]
-            if label == 'stop' and center_y > 60:
-                algocontrol.stop_flag = True
-            if label == 'limit' and center_y > 120:
-                algocontrol.limit_flag = True
-            if label == 'limit_end' and center_y > 200:
-                algocontrol.limit_flag = False
+    dist_ctrl = ai_settings.dist_control
 
-    # 流程操作模块
-    if algocontrol.stop_flag == True:
-        car.stop()
+    # 识别标志物并更新flag
+    if markstats.detect:
+        identificate_mark(ai_settings, markstats, algo, dist_ctrl)
+
+    # 执行对应的操作
+    process_operation(ai_settings, car, algo)
+
+def identificate_mark(ai_settings, markstats, algo, dist_ctrl):
+    """识别标志模块"""
+    for label_id, box in zip(markstats.labels, markstats.boxes):
+        _, center_y = analyse_box(ai_settings, box)
+        label = ai_settings.label_dict[label_id]
+        if label == 'side_walk' and center_y > dist_ctrl['side_walk']:
+            algo.sidewalk_flag = True
+        if label == 'limit' and center_y > dist_ctrl['limit']:
+            algo.limit_flag = True
+        if label == 'limit_end' and center_y > dist_ctrl['limit_end']:
+            algo.limit_flag = False
+        if label == 'overtake' and center_y > dist_ctrl['overtake']:
+            algo.overtake_flag = True
+
+def process_operation(ai_settings, car, algo):
+    """流程操作模块, 根据优先级高低排序"""
+    if algo.sidewalk_flag and 'side_walk' not in algo.completed:
+        car.jerk()
+        time.sleep(ai_settings.sidewalk_pausetime)
+        car.upwards()
+        algo.completed.append('side_walk')
+        algo.sidewalk_flag = False
         return
-    if algocontrol.limit_flag == True:
-        angle = ai_settings.angle_limit_formula(algocontrol.angle_prep)
+
+    if algo.overtake_flag:
+        algo.overtake_flag = False
+        algo.overtake()
+
+    if algo.limit_flag:
+        angle = ai_settings.angle_limit_formula(algo.angle_prep)
         car.update(angle=angle)
         return
 
-    car.update()
+    # 未进行任何操作, 直接更新速度值和角度值
+    car.update(car.speed, car.angle)
 
 def save_img(ai_settings, dlmodel):
     """保存图片"""

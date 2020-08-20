@@ -1,4 +1,4 @@
-import os
+import os, time
 import v4l2capture
 from ctypes import *
 import tty
@@ -34,9 +34,6 @@ class Car():
         self.angle = ai_settings.car_init_angle
         self.angle_value = []
 
-        # 运行标志
-        self.start_sign = False
-
     def upwards(self, speed=1600):
         """小车直行"""
         self.speed = speed
@@ -51,12 +48,13 @@ class Car():
         self.update()
 
     def turn_left(self, angle=2100):
-        """小车"""
+        """小车左转"""
         if angle <= 1500: raise Exception("左转角度值必须大于1500!")
         self.angle = angle
         self.update()
 
     def turn_right(self, angle=900):
+        """小车右转"""
         if angle >= 1500: raise Exception("右转角度值必须小于1500!")
         self.angle = angle
         self.update()
@@ -64,11 +62,19 @@ class Car():
     def stop(self):
         """小车停止运行"""
         self.speed = self.angle = 1500
-        self.start_sign = False
         self.update()
 
+    def jerk(self):
+        """小车急停"""
+        self.backwards(700)
+        time.sleep(0.1)
+        self.stop()
+
     def update(self, speed=None, angle=None):
+        """更新小车的速度值和角度值"""
         if speed is None: speed = self.speed
         if angle is None: angle = self.angle
-        """更新小车的速度值和角度值"""
-        # self.lib.send_cmd(speed, angle)
+
+        # 若开启DEBUG, 则不会运行, 不会显示串口发送的命令
+        if not self.ai_settings.DEBUG:
+            self.lib.send_cmd(speed, angle)

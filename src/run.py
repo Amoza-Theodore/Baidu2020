@@ -27,7 +27,7 @@ def run():
     dlmodel = DLmodel(ai_settings)
 
     # 初始化算法控制系统
-    algocontrol = AlgoControl()
+    algo = AlgoControl(ai_settings, car)
 
     # 创建一个状态类, 用以储存标志物状态
     markstats = MarkStatus()
@@ -35,10 +35,12 @@ def run():
     # 开始任务的主循环
     while True:
         func.get_image(ai_settings, car, dlmodel)
-        algocontrol.angle_prep = func.predict_angle(ai_settings, dlmodel)
-        car.angle = ai_settings.angle_formula(algocontrol.angle_prep)
+
+        algo.angle_prep = func.predict_angle(ai_settings, dlmodel)
+        car.angle = ai_settings.angle_formula(algo.angle_prep)
+
         func.get_label_para(ai_settings, dlmodel, markstats)
-        func.algorithmal_control(ai_settings, car, dlmodel, markstats, algocontrol)
+        func.algorithmal_control(ai_settings, car, markstats, algo)
 
 if __name__ == '__main__':
     run()

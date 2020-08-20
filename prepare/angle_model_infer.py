@@ -5,12 +5,9 @@ from PIL import Image
 import getopt
 import os
 
-model_save_dir = "model_infer"
-infer_path = "img"
-score_save_path = ''
-
-params = "model_infer/params"
-model = "model_infer/model"
+model_save_dir = './model/model_infer/'
+infer_path = "./data/img"
+score_save_path = './'
 
 def dataset(image_path):
     lower_hsv = np.array([25, 75, 195])
@@ -31,7 +28,7 @@ def dataset(image_path):
     return img
 
 
-use_cuda = False
+use_cuda = True
 place = fluid.CUDAPlace(0) if use_cuda else fluid.CPUPlace()
 
 infer_exe = fluid.Executor(place)
